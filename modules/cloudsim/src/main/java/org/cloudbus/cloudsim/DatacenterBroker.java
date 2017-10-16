@@ -8,6 +8,7 @@
 
 package org.cloudbus.cloudsim;
 
+import java.io.Console;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.LinkedList;
@@ -345,11 +346,81 @@ public class DatacenterBroker extends SimEntity {
 	 * 
 	 * @pre $none
 	 * @post $none
-         * @see #submitCloudletList(java.util.List) 
+	 * @see #submitCloudletList(java.util.List)
 	 */
 	protected void submitCloudlets() {
 		int vmIndex = 0;
 		List<Cloudlet> successfullySubmitted = new ArrayList<Cloudlet>();
+
+		// White's Algorithm
+
+		// Assign VM sizes
+		Vm[] vm_small = new Vm[getVmsCreatedList().size()]; int vm_small_count = 0;
+		Vm[] vm_med = new Vm[getVmsCreatedList().size()]; int vm_med_count = 0;
+		Vm[] vm_large = new Vm[getVmsCreatedList().size()]; int vm_large_count = 0;
+		for (int i = 0; i < getVmsCreatedList().size(); i++) {
+			Vm vm = getVmsCreatedList().get(i);
+			if (vm.getRam() == 512) {
+				vm_small[vm_small_count] = vm;
+				vm_small_count++;
+			} else if (vm.getRam() == 1024) {
+				vm_med[vm_med_count] = vm;
+				vm_med_count++;
+			} else {
+				vm_large[vm_large_count] = vm;
+				vm_large_count++;
+			}
+		}
+
+		// Give cloudlets sizes
+		Cloudlet[] cl_small = new Cloudlet[getCloudletList().size()]; int cl_small_count = 0;
+		Cloudlet[] cl_med = new Cloudlet[getCloudletList().size()]; int cl_med_count = 0;
+		Cloudlet[] cl_large = new Cloudlet[getCloudletList().size()]; int cl_large_count = 0;
+		for (int i = 0; i < getCloudletList().size(); i++) {
+			Cloudlet cl = getCloudletList().get(i);
+			if (cl.getCloudletFileSize() == 250) { // testing purposes, would check for a range ideally
+				cl_small[cl_small_count] = cl;
+				cl_small_count++;
+			} else if (cl.getCloudletFileSize() == 1000) {
+				cl_med[cl_med_count] = cl;
+				cl_med_count++;
+			} else {
+				cl_large[cl_large_count] = cl;
+				cl_large_count++;
+			}
+		}
+
+		// Assign cloudlets to vms accordingly
+		// Small
+		for (int i = 0; i < cl_small_count; i++) {
+			Cloudlet cl = cl_small[i];
+			Vm vm = vm_small[vmIndex];
+			cl.setVmId(vm.getId());
+			vmIndex = (vmIndex + 1) % vm_small_count;
+		}
+
+		vmIndex = 0;
+
+		// Medium
+		for (int i = 0; i < cl_med_count; i++) {
+			Cloudlet cl = cl_med[i];
+			Vm vm = vm_med[vmIndex];
+			cl.setVmId(vm.getId());
+			vmIndex = (vmIndex + 1) % vm_med_count;
+		}
+
+		vmIndex = 0;
+
+		// Large
+		for (int i = 0; i < cl_large_count; i++) {
+			Cloudlet cl = cl_large[i];
+			Vm vm = vm_large[vmIndex];
+			cl.setVmId(vm.getId());
+			vmIndex = (vmIndex + 1) % vm_large_count;
+		}
+
+		vmIndex = 0;
+
 		for (Cloudlet cloudlet : getCloudletList()) {
 			Vm vm;
 			// if user didn't bind this cloudlet and it has not been executed yet
@@ -360,7 +431,7 @@ public class DatacenterBroker extends SimEntity {
 				if (vm == null) { // vm was not created
 					if(!Log.isDisabled()) {				    
 					    Log.printConcatLine(CloudSim.clock(), ": ", getName(), ": Postponing execution of cloudlet ",
-							cloudlet.getCloudletId(), ": bount VM not available");
+							cloudlet.getCloudletId(), ": bound VM not available");
 					}
 					continue;
 				}
@@ -374,6 +445,8 @@ public class DatacenterBroker extends SimEntity {
 			cloudlet.setVmId(vm.getId());
 			sendNow(getVmsToDatacentersMap().get(vm.getId()), CloudSimTags.CLOUDLET_SUBMIT, cloudlet);
 			cloudletsSubmitted++;
+			// This is used for random allocation
+			//vmIndex = ((int) Math.random() * 1000000 )% getVmsCreatedList().size();
 			vmIndex = (vmIndex + 1) % getVmsCreatedList().size();
 			getCloudletSubmittedList().add(cloudlet);
 			successfullySubmitted.add(cloudlet);

@@ -49,7 +49,7 @@ public class WhitesAlgorithmExample {
 
             // Initialise the random seed for synthetic data
             // Ensures same data each test
-            Random generator = new Random(121314);
+            Random generator = new Random(420520);
 
             // Second step: Create Datacenters
             // Datacenters are the resource providers in CloudSim. We need at
@@ -100,7 +100,7 @@ public class WhitesAlgorithmExample {
             UtilizationModel utilizationModel = new UtilizationModelFull();
 
             // Number of cloudlets
-            int cl_num = (generator.nextInt(10) + 5) * vm_num;
+            int cl_num = (generator.nextInt(100) + 50) * vm_num;
 
             // Make em
             for (int i = 0; i < cl_num; i++) {
@@ -243,8 +243,8 @@ public class WhitesAlgorithmExample {
         Collections.sort(list, new Comparator<Cloudlet>() {
             @Override
             public int compare(Cloudlet o1, Cloudlet o2) {
-                return o1.getCloudletId() < o2.getCloudletId() ? -1 :
-                        o1.getCloudletId() > o2.getCloudletId() ? 1 :
+                return o1.getFinishTime() < o2.getFinishTime() ? -1 :
+                        o1.getFinishTime() > o2.getFinishTime() ? 1 :
                                 0;
             }
         });
